@@ -1,0 +1,8 @@
+numpy
+torch
+torchvision
+tqdm
+pyyaml
+matplotlib
+scikit-learn
+pandas==1.5.3
