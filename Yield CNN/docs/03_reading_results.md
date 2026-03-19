@@ -112,8 +112,8 @@ classes improved. If only weighted F1 goes up, the model just got better at none
 
 Current progression:
 - Baseline (plain CNN):          macro F1 = 0.80
-- EXP-01+04+07 (20 epochs):     macro F1 = 0.87
-- EXP-01+04+07 (40 epochs):     macro F1 = 0.89
+- ResNet+Focal (20 epochs):     macro F1 = 0.87
+- ResNet+Focal (40 epochs):     macro F1 = 0.89
 
 ### weighted avg
 
@@ -178,7 +178,7 @@ Practical implication: a 0.02 change in Donut F1 between experiments is
 within measurement noise. A 0.33 change (0.56 to 0.89) is real.
 A 0.02 change in none F1 is also real because n=29,486.
 
-This is why collecting more Donut and Near-full samples (EXP-12 synthetic data)
+This is why collecting more Donut and Near-full samples (synthetic data augmentation)
 is not just about giving the model more to learn from; it also makes the
 evaluation metrics more statistically reliable.
 
@@ -197,7 +197,7 @@ How to read it:
 
 Example cell: Row=Scratch, Col=Edge-Loc = 0.10 means 10% of actual
 Scratch wafers were predicted as Edge-Loc. This is the specific confusion
-pair to target with CoordConv (EXP-03); adding spatial position information
+pair to target with CoordConv; adding spatial position information
 helps the model distinguish a scratch that crosses the edge zone from a
 genuine edge-localized cluster defect.
 

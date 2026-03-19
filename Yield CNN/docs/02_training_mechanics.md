@@ -150,7 +150,7 @@ multiplies LR by 0.5. Reactive, responds to what's actually happening.
 Problem: the step-down is abrupt. A sudden LR halving can disturb
 the optimizer's momentum estimates and cause instability.
 
-### CosineAnnealingLR (planned EXP-09)
+### CosineAnnealingLR
 
 ```python
 scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(

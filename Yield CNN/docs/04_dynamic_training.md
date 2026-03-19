@@ -254,7 +254,7 @@ handle = model.features[0].register_forward_hook(hook_fn)
 # handle.remove()  # remove the hook after inspection
 ```
 
-### Grad-CAM (EXP-16)
+### Grad-CAM
 
 Gradient-weighted Class Activation Mapping shows which pixels in the
 wafer map the model looked at to make its decision.
