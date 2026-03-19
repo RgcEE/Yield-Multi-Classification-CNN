@@ -269,7 +269,7 @@ def train_one_epoch(model, loader, optimizer, loss_fn):
 
     for x, y in loader:
         x = x.to(DEVICE)
-        y = torch.tensor(y, dtype=torch.long, device=DEVICE)
+        y = torch.as_tensor(y, dtype=torch.long, device=DEVICE)
 
         optimizer.zero_grad(set_to_none=True)
         logits = model(x)
@@ -295,7 +295,7 @@ def eval_one_epoch(model, loader, loss_fn):
 
     for x, y in loader:
         x = x.to(DEVICE)
-        y = torch.tensor(y, dtype=torch.long, device=DEVICE)
+        y = torch.as_tensor(y, dtype=torch.long, device=DEVICE)
 
         logits = model(x)
         loss   = loss_fn(logits, y)
@@ -316,7 +316,7 @@ def collect_predictions(model, loader):
     for x, y in loader:
         logits = model(x.to(DEVICE))
         all_preds.append(logits.argmax(dim=1).cpu().numpy())
-        all_targets.append(np.array(y))
+        all_targets.append(np.asarray(y))
 
     return np.concatenate(all_preds), np.concatenate(all_targets)
 
@@ -347,10 +347,13 @@ def main():
     sample_weights = class_weights[y_tr]
     sampler = WeightedRandomSampler(sample_weights, len(sample_weights), replacement=True)
 
+    # num_workers=0 on Windows: multiprocessing workers require pickling the full
+    # dataset through a named pipe whose buffer is ~64 KB — far smaller than
+    # 138 K wafer maps — causing OSError [Errno 22] / truncated-pickle crashes.
     train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, sampler=sampler,
-                              num_workers=2, pin_memory=True)
+                              num_workers=0, pin_memory=True)
     val_loader   = DataLoader(val_ds,   batch_size=256, shuffle=False,
-                              num_workers=2, pin_memory=True)
+                              num_workers=0, pin_memory=True)
 
     model     = WaferResNet(num_classes=K).to(DEVICE)
     loss_fn   = FocalLoss(gamma=2.0)
