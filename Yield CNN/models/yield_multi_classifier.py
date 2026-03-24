@@ -1,6 +1,6 @@
 """
 Author: Reynaldo Gomez
-Last Edited: 2/18/2026
+Last Edited: 3/18/2026
 
 Multiclass CNN classifier for semiconductor wafer defect patterns (LSWMD dataset).
 Trains on 172,950 labeled wafer maps across 9 classes (8 defect types + 'none').
@@ -142,8 +142,8 @@ class WaferDataset(Dataset):
 
 class WaferCNN(nn.Module):
     """
-    4x Conv→BN→ReLU→MaxPool blocks, AdaptiveAvgPool, Dropout, Linear.
-    Output: raw logits (N, K). Do not add softmax — CrossEntropyLoss handles it.
+    4x Conv->BN->ReLU->MaxPool blocks, AdaptiveAvgPool, Dropout, Linear.
+    Output: raw logits (N, K). Do not add softmax; CrossEntropyLoss handles it.
     """
     def __init__(self, num_classes: int):
         super().__init__()
