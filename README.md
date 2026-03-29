@@ -33,6 +33,12 @@ Batch size and learning rate ablation across seven runs. The mechanism behind ba
 #### [06_se_coord.md](06_se_coord.md)
 SE attention and CoordConv ablation. Three implementation bugs documented with their effect on result validity traced run by run. Root cause of CoordConv's F1 regression derived. Decision to adopt SE attention as the new base architecture recorded with supporting experimental evidence.
 
+#### [07_pseudo_labeling.md](07_pseudo_labeling.md)
+Pseudo-labeling run on 638,507 unlabeled LSWMD wafers using `best_se_only.pt`. 340,568 samples accepted at per-class confidence thresholds before capping. Donut softmax saturation at mean confidence 1.0000 derived as extrapolation onto out-of-distribution patterns, not genuine signal. Two mitigations applied: Donut threshold raised to 0.999 and a 3x per-class cap enforced. Post-cap combined dataset approximately 416,513 samples; Scratch, Loc, and Near-full gain directly.
+
+#### [08_pseudo_labeling_experiments.md](08_pseudo_labeling_experiments.md)
+Three retrain experiments on the combined labeled + pseudo-labeled dataset. The full pseudo-label retrain collapsed to predicting only none: uncapped none pseudo-labels made the combined dataset 87% none. Excluding none and strong-F1 classes from pseudo-labeling recovered Donut (0.975), Edge-Loc (0.910), and Loc (0.844) but collapsed Scratch to 0.540 from overconfident pseudo-labels. Excluding Scratch pseudo-labels as well recovered Scratch partially to 0.620 while Donut and Edge-Loc held. Net macro F1 0.884 versus se_only baseline 0.886, statistically indistinguishable.
+
 ---
 
 ### Experiment results
@@ -44,6 +50,30 @@ SE attention and CoordConv ablation. Three implementation bugs documented with t
 | ResNet+Focal | 40 | 0.890 | 0.87 | 0.80 | +20 epochs, CosineAnnealingLR |
 | Batch ablation best | 40 | 0.888 | 0.867 | 0.803 | batch=128, LR=3e-4, confirmed optimal |
 | SE only | 40 | 0.886 | 0.873 | 0.802 | SE attention, ReduceLROnPlateau |
+| SE pseudo v3 | 40 | 0.884 | 0.975 | 0.620 | pseudo-labels: Donut, Edge-Loc, Loc, Near-full only |
+| SE pseudo v3 + threshold | — | **0.930** | 0.940 | 0.820 | confidence ≥ 0.7; 95.2% auto-classified, 4.8% abstained |
+
+---
+
+### Confidence thresholding
+
+Evaluating the SE pseudo v3 checkpoint with a confidence threshold of 0.70 on the 34,590-sample validation set produces macro F1 0.930 on the 32,928 samples the model classifies (95.2%). The 1,662 samples below threshold (4.8%) are abstained rather than forced to a low-confidence prediction.
+
+Per-class results on auto-classified samples:
+
+| Class | Precision | Recall | F1 | Support |
+|---|---|---|---|---|
+| Center | 0.97 | 0.97 | 0.97 | 811 |
+| Donut | 0.92 | 0.96 | 0.94 | 96 |
+| Edge-Loc | 0.84 | 0.96 | 0.90 | 899 |
+| Edge-Ring | 0.99 | 0.98 | 0.99 | 1,818 |
+| Loc | 0.84 | 0.91 | 0.88 | 584 |
+| Near-full | 0.96 | 1.00 | 0.98 | 23 |
+| Random | 0.90 | 0.96 | 0.93 | 163 |
+| Scratch | 0.74 | 0.93 | 0.82 | 204 |
+| none | 1.00 | 0.99 | 0.99 | 28,330 |
+
+Scratch precision at 0.74 remains the weakest figure; low-confidence Scratch predictions are the primary driver of the abstention pool. Macro F1 gain from 0.884 to 0.930 reflects selective abstention removing the hardest cases, not an improvement in the underlying model.
 
 ---
 
