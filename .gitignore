@@ -1,5 +1,8 @@
 # Yield CNN
 Yield CNN/*.cu
+Yield CNN/Dataset/
+Yield CNN/__pycache__/
+Yield CNN/data/pseudo_labeled.pkl
 
 # Wet Oxidation (Temp)
 Wet Oxidation/

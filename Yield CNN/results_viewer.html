@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Yield CNN — Results Viewer</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3250;
+      --accent: #5b8dee;
+      --accent2: #7c5ce0;
+      --text: #e0e6f0;
+      --text-muted: #7a85a3;
+      --good: #2ecc71;
+      --mid: #f39c12;
+      --bad: #e74c3c;
+      --row-hover: #1e2236;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header span { font-size: 0.8rem; color: var(--text-muted); }
+    .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: 0.75rem; color: var(--accent); }
+
+    .toolbar { display: flex; gap: 1rem; padding: 1rem 2rem; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--border); }
+    .toolbar input[type=text] { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; width: 220px; outline: none; }
+    .toolbar input[type=text]:focus { border-color: var(--accent); }
+    .toolbar select { background: var(--surface); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; outline: none; cursor: pointer; }
+    .toolbar label { font-size: 0.8rem; color: var(--text-muted); }
+    .toolbar .sep { flex: 1; }
+    .toolbar button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 14px; font-size: 0.82rem; cursor: pointer; }
+    .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar button.active { border-color: var(--accent); color: var(--accent); background: #1a2240; }
+
+    .view-tabs { display: flex; gap: 0; }
+    .view-tabs button { border-radius: 0; border-right: none; }
+    .view-tabs button:first-child { border-radius: 6px 0 0 6px; }
+    .view-tabs button:last-child { border-radius: 0 6px 6px 0; border-right: 1px solid var(--border); }
+
+    .main { padding: 1.5rem 2rem; }
+
+    /* TABLE VIEW */
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    thead th { background: var(--surface2); color: var(--text-muted); text-transform: uppercase; font-size: 0.7rem; letter-spacing: .05em; padding: 8px 10px; text-align: left; position: sticky; top: 0; white-space: nowrap; user-select: none; cursor: pointer; border-bottom: 1px solid var(--border); }
+    thead th:hover { color: var(--accent); }
+    thead th.sorted-asc::after { content: ' ▲'; color: var(--accent); }
+    thead th.sorted-desc::after { content: ' ▼'; color: var(--accent); }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.12s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--row-hover); }
+    tbody td { padding: 8px 10px; white-space: nowrap; }
+    td.mono { font-family: monospace; font-size: 0.8rem; }
+    td.muted { color: var(--text-muted); }
+
+    .metric { display: inline-block; padding: 2px 7px; border-radius: 4px; font-weight: 600; font-family: monospace; font-size: 0.82rem; }
+    .metric-bar-cell { min-width: 120px; }
+    .metric-bar-wrap { display: flex; align-items: center; gap: 6px; }
+    .metric-bar { height: 8px; border-radius: 4px; flex-shrink: 0; }
+    .metric-val { font-family: monospace; font-size: 0.78rem; }
+
+    /* F1 per-class mini bars */
+    .f1-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; min-width: 200px; }
+    .f1-item { display: flex; flex-direction: column; gap: 2px; }
+    .f1-label { font-size: 0.65rem; color: var(--text-muted); }
+    .f1-bar-wrap { display: flex; align-items: center; gap: 4px; }
+    .f1-bar { height: 5px; border-radius: 3px; }
+    .f1-val { font-size: 0.65rem; font-family: monospace; }
+
+    /* CHART VIEW */
+    .chart-area { display: flex; flex-direction: column; gap: 2rem; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.5rem; }
+    .chart-card h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: .05em; }
+    .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; }
+    .bar-label { font-size: 0.78rem; color: var(--text-muted); min-width: 180px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bar-outer { flex: 1; background: var(--surface2); border-radius: 4px; height: 22px; position: relative; }
+    .bar-inner { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; font-size: 0.75rem; font-weight: 600; font-family: monospace; transition: width 0.4s ease; }
+    .bar-tip { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: var(--text-muted); }
+
+    /* COMPARE VIEW */
+    .compare-panel { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .compare-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; min-width: 260px; flex: 1; }
+    .compare-card h3 { font-size: 0.9rem; margin-bottom: 0.8rem; color: var(--accent); }
+    .compare-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
+    .compare-row:last-child { border-bottom: none; }
+    .compare-row .k { color: var(--text-muted); }
+    .compare-row .v { font-family: monospace; font-weight: 600; }
+    .radar-wrap { display: flex; justify-content: center; margin-top: 0.5rem; }
+
+    .empty { text-align: center; color: var(--text-muted); padding: 3rem; font-size: 0.9rem; }
+
+    /* color scale helpers — applied via JS */
+    .c-good { color: var(--good); }
+    .c-mid  { color: var(--mid); }
+    .c-bad  { color: var(--bad); }
+    .bg-good { background: rgba(46,204,113,0.15); }
+    .bg-mid  { background: rgba(243,156,18,0.15); }
+    .bg-bad  { background: rgba(231,76,60,0.15); }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Yield CNN — Results Viewer</h1>
+  <span id="run-count" class="badge">0 runs</span>
+  <span style="flex:1"></span>
+  <label for="csv-upload" style="cursor:pointer;">
+    <button onclick="document.getElementById('csv-upload').click()">Load CSV</button>
+    <input type="file" id="csv-upload" accept=".csv" style="display:none" />
+  </label>
+</header>
+
+<div class="toolbar">
+  <label>Filter</label>
+  <input type="text" id="filter-input" placeholder="model, exp_id, notes…" />
+  <label>Model</label>
+  <select id="model-filter"><option value="">All models</option></select>
+  <div class="sep"></div>
+  <div class="view-tabs">
+    <button class="active" onclick="setView('table')">Table</button>
+    <button onclick="setView('chart')">Charts</button>
+    <button onclick="setView('compare')">Compare</button>
+  </div>
+</div>
+
+<div class="main" id="main-content"></div>
+
+<script>
+// ── Embedded CSV data (auto-updated when you Load CSV) ──────────────────────
+const EMBEDDED_CSV = `timestamp,exp_id,model,loss_fn,epochs,lr,batch_size,augmentation,val_accuracy,val_loss,macro_f1,best_epoch,train_time_s,checkpoint,notes,f1_Center,f1_Donut,f1_Edge-Loc,f1_Edge-Ring,f1_Loc,f1_Near-full,f1_Random,f1_Scratch,f1_none
+2026-03-18 17:51:02,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),20,0.0003,128,rot90+hflip,0.965481,0.253967,0.868664,18,740.5,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.912125,0.890909,0.776683,0.971693,0.746803,0.933333,0.897143,0.705479,0.983803
+2026-03-18 18:22:54,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),40,0.0003,128,rot90+hflip,0.972825,0.286995,0.887639,12,1403.0,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.92517,0.867257,0.813604,0.972393,0.77179,0.95082,0.896552,0.803279,0.987887
+2026-03-18 19:35:20,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),20,0.0003,256,rot90+hflip,0.965915,0.254445,0.863085,18,636.6,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.893594,0.863436,0.790227,0.969354,0.751764,0.952381,0.873239,0.689286,0.984481
+2026-03-18 19:51:51,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),20,0.0003,256,rot90+hflip,0.959555,0.252038,0.850667,12,643.0,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.905992,0.854545,0.771545,0.974016,0.724265,0.95082,0.918768,0.575931,0.980119
+2026-03-18 20:22:48,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),20,0.0003,64,rot90+hflip,0.966956,0.275119,0.86327,20,859.8,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.900055,0.853448,0.818059,0.974359,0.733742,0.949153,0.865014,0.690909,0.984694
+2026-03-18 20:39:40,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),20,0.00015,64,rot90+hflip,0.967245,0.338162,0.85978,20,847.2,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.914953,0.885845,0.829797,0.973113,0.708964,0.896552,0.86533,0.678383,0.985082
+2026-03-18 21:09:08,resnet-focal-v1,WaferResNet,FocalLoss(gamma=2),40,0.00015,64,rot90+hflip,0.968777,0.320955,0.87121,8,1659.6,checkpoints/best_resnet_focal.pt,ResidualBlocks + SiLU + FocalLoss,0.916343,0.86385,0.8,0.970551,0.75641,0.896552,0.878187,0.773438,0.985562
+2026-03-18 22:27:11,se-coord-v1,WaferResNet,FocalLoss(gamma=2),40,0.0003,128,rot90+hflip,0.958109,0.112801,0.849575,34,1610.8,checkpoints/best_se_coord.pt,ResidualBlocks + SiLU + FocalLoss + SEBlock + CoordConv (in_ch=3),0.893709,0.88,0.757551,0.962283,0.721814,0.967742,0.89011,0.593443,0.979524`;
+
+// ── State ────────────────────────────────────────────────────────────────────
+let allRows = [];
+let sortCol = 'val_accuracy';
+let sortDir = -1; // -1 = desc
+let filterText = '';
+let modelFilter = '';
+let currentView = 'table';
+
+const F1_CLASSES = ['f1_Center','f1_Donut','f1_Edge-Loc','f1_Edge-Ring','f1_Loc','f1_Near-full','f1_Random','f1_Scratch','f1_none'];
+const F1_LABELS  = ['Center','Donut','Edge-Loc','Edge-Ring','Loc','Near-full','Random','Scratch','none'];
+
+const METRIC_COLS = ['val_accuracy','macro_f1','val_loss'];
+const PALETTE = ['#5b8dee','#7c5ce0','#00b894','#fd79a8','#e17055','#00cec9','#fab1a0','#a29bfe'];
+
+// ── CSV Parser ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',');
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = line.split(',');
+    const row = {};
+    headers.forEach((h, i) => { row[h.trim()] = vals[i] !== undefined ? vals[i].trim() : ''; });
+    return row;
+  });
+}
+
+function numOf(row, col) { return parseFloat(row[col]); }
+function pct(v) { return (v * 100).toFixed(2) + '%'; }
+function fmt(v, decimals=4) { return isNaN(v) ? v : parseFloat(v).toFixed(decimals); }
+
+// ── Color scale ──────────────────────────────────────────────────────────────
+function colorScale(value, min, max, invert=false) {
+  let t = max === min ? 0.5 : (value - min) / (max - min);
+  if (invert) t = 1 - t;
+  if (t >= 0.7) return { cls: 'c-good bg-good', bar: '#2ecc71' };
+  if (t >= 0.4) return { cls: 'c-mid bg-mid',   bar: '#f39c12' };
+  return { cls: 'c-bad bg-bad', bar: '#e74c3c' };
+}
+
+// ── Filter & Sort ────────────────────────────────────────────────────────────
+function filtered() {
+  return allRows.filter(r => {
+    const textOk = !filterText || Object.values(r).some(v => v.toLowerCase().includes(filterText.toLowerCase()));
+    const modelOk = !modelFilter || r.model === modelFilter;
+    return textOk && modelOk;
+  });
+}
+
+function sorted(rows) {
+  return [...rows].sort((a, b) => {
+    const av = isNaN(a[sortCol]) ? a[sortCol] : numOf(a, sortCol);
+    const bv = isNaN(b[sortCol]) ? b[sortCol] : numOf(b, sortCol);
+    return sortDir * (av > bv ? 1 : av < bv ? -1 : 0);
+  });
+}
+
+// ── Views ────────────────────────────────────────────────────────────────────
+function setView(v) {
+  currentView = v;
+  document.querySelectorAll('.view-tabs button').forEach((b, i) => {
+    b.classList.toggle('active', ['table','chart','compare'][i] === v);
+  });
+  render();
+}
+
+function render() {
+  const rows = sorted(filtered());
+  const el = document.getElementById('main-content');
+  if (!rows.length) { el.innerHTML = '<div class="empty">No runs match the current filter.</div>'; return; }
+  if (currentView === 'table')   el.innerHTML = renderTable(rows);
+  if (currentView === 'chart')   el.innerHTML = renderChart(rows);
+  if (currentView === 'compare') el.innerHTML = renderCompare(rows);
+  attachTableEvents();
+}
+
+// ── TABLE VIEW ───────────────────────────────────────────────────────────────
+function renderTable(rows) {
+  const accVals = rows.map(r => numOf(r,'val_accuracy'));
+  const f1Vals  = rows.map(r => numOf(r,'macro_f1'));
+  const lossVals= rows.map(r => numOf(r,'val_loss'));
+  const [accMin,accMax] = [Math.min(...accVals), Math.max(...accVals)];
+  const [f1Min, f1Max]  = [Math.min(...f1Vals),  Math.max(...f1Vals)];
+  const [lMin,  lMax]   = [Math.min(...lossVals), Math.max(...lossVals)];
+
+  const thClass = col => col === sortCol ? (sortDir === -1 ? 'sorted-desc' : 'sorted-asc') : '';
+
+  const head = `
+    <thead><tr>
+      <th data-col="timestamp"    class="${thClass('timestamp')}">Time</th>
+      <th data-col="exp_id"       class="${thClass('exp_id')}">Exp ID</th>
+      <th data-col="model"        class="${thClass('model')}">Model</th>
+      <th data-col="epochs"       class="${thClass('epochs')}">Ep</th>
+      <th data-col="lr"           class="${thClass('lr')}">LR</th>
+      <th data-col="batch_size"   class="${thClass('batch_size')}">BS</th>
+      <th data-col="val_accuracy" class="${thClass('val_accuracy')}">Val Acc</th>
+      <th data-col="val_loss"     class="${thClass('val_loss')}">Val Loss</th>
+      <th data-col="macro_f1"     class="${thClass('macro_f1')}">Macro F1</th>
+      <th data-col="best_epoch"   class="${thClass('best_epoch')}">Best Ep</th>
+      <th data-col="train_time_s" class="${thClass('train_time_s')}">Time (s)</th>
+      <th>Per-Class F1</th>
+      <th>Notes</th>
+    </tr></thead>`;
+
+  const body = rows.map((r, idx) => {
+    const acc  = numOf(r,'val_accuracy');
+    const f1   = numOf(r,'macro_f1');
+    const loss = numOf(r,'val_loss');
+    const accC  = colorScale(acc,  accMin, accMax);
+    const f1C   = colorScale(f1,   f1Min,  f1Max);
+    const lossC = colorScale(loss, lMin,   lMax, true);
+
+    const accBar  = `<div class="metric-bar-wrap"><div class="metric-bar" style="width:${(acc*100).toFixed(1)}px;background:${accC.bar}"></div><span class="metric-val ${accC.cls}">${pct(acc)}</span></div>`;
+    const f1Bar   = `<div class="metric-bar-wrap"><div class="metric-bar" style="width:${(f1*100).toFixed(1)}px;background:${f1C.bar}"></div><span class="metric-val ${f1C.cls}">${pct(f1)}</span></div>`;
+    const lossEl  = `<span class="metric ${lossC.cls}">${parseFloat(loss).toFixed(4)}</span>`;
+
+    const f1Mini = F1_CLASSES.map((col, i) => {
+      const v = numOf(r, col);
+      const c = colorScale(v, 0.5, 1.0);
+      return `<div class="f1-item">
+        <span class="f1-label">${F1_LABELS[i]}</span>
+        <div class="f1-bar-wrap">
+          <div class="f1-bar" style="width:${(v*60).toFixed(0)}px;background:${c.bar}"></div>
+          <span class="f1-val">${(v*100).toFixed(0)}%</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    const ts = r.timestamp.replace('2026-','').replace(' ','\u00A0');
+    return `<tr>
+      <td class="muted mono">${ts}</td>
+      <td class="mono">${r.exp_id}</td>
+      <td>${r.model}</td>
+      <td class="mono">${r.epochs}</td>
+      <td class="mono">${r.lr}</td>
+      <td class="mono">${r.batch_size}</td>
+      <td class="metric-bar-cell">${accBar}</td>
+      <td>${lossEl}</td>
+      <td class="metric-bar-cell">${f1Bar}</td>
+      <td class="mono">${r.best_epoch}</td>
+      <td class="mono">${parseFloat(r.train_time_s).toFixed(0)}</td>
+      <td><div class="f1-grid">${f1Mini}</div></td>
+      <td class="muted" style="max-width:200px;white-space:normal;font-size:0.75rem">${r.notes}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div class="table-wrap"><table>${head}<tbody>${body}</tbody></table></div>`;
+}
+
+function attachTableEvents() {
+  document.querySelectorAll('thead th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (sortCol === col) sortDir *= -1;
+      else { sortCol = col; sortDir = -1; }
+      render();
+    });
+  });
+}
+
+// ── CHART VIEW ───────────────────────────────────────────────────────────────
+function renderChart(rows) {
+  const label = r => `${r.exp_id} | ep${r.epochs} lr${r.lr} bs${r.batch_size}`;
+  const maxAcc = Math.max(...rows.map(r => numOf(r,'val_accuracy')));
+  const maxF1  = Math.max(...rows.map(r => numOf(r,'macro_f1')));
+
+  function barChart(title, rows, valFn, maxV, fmt, colorFn) {
+    const bars = rows.map((r, i) => {
+      const v = valFn(r);
+      const pct = (v / maxV * 100).toFixed(1);
+      const c = colorFn(r, i);
+      return `<div class="bar-row">
+        <div class="bar-label">${label(r)}</div>
+        <div class="bar-outer">
+          <div class="bar-inner" style="width:${pct}%;background:${c}">${fmt(v)}</div>
+          <span class="bar-tip">${fmt(v)}</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="chart-card"><h3>${title}</h3><div class="bar-chart">${bars}</div></div>`;
+  }
+
+  const modelColors = {};
+  [...new Set(rows.map(r => r.model))].forEach((m, i) => modelColors[m] = PALETTE[i % PALETTE.length]);
+  const mc = (r) => modelColors[r.model];
+
+  const accChart  = barChart('Val Accuracy', rows, r => numOf(r,'val_accuracy'), maxAcc, v => (v*100).toFixed(2)+'%', mc);
+  const f1Chart   = barChart('Macro F1',     rows, r => numOf(r,'macro_f1'),     maxF1,  v => (v*100).toFixed(2)+'%', mc);
+
+  // Per-class F1 grouped bar
+  const classes = F1_LABELS;
+  const classCharts = F1_CLASSES.map((col, ci) => {
+    const vals = rows.map(r => numOf(r, col));
+    const mx = Math.max(...vals, 0.01);
+    const bars = rows.map((r, ri) => {
+      const v = numOf(r, col);
+      const pct2 = (v / mx * 100).toFixed(1);
+      const col2 = mc(r);
+      return `<div class="bar-row">
+        <div class="bar-label">${label(r)}</div>
+        <div class="bar-outer">
+          <div class="bar-inner" style="width:${pct2}%;background:${col2}">${(v*100).toFixed(1)}%</div>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="chart-card"><h3>F1 — ${F1_LABELS[ci]}</h3><div class="bar-chart">${bars}</div></div>`;
+  }).join('');
+
+  // Legend
+  const legend = Object.entries(modelColors).map(([m, c]) =>
+    `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><span style="width:12px;height:12px;background:${c};border-radius:2px;display:inline-block"></span><span style="font-size:0.78rem">${m}</span></span>`
+  ).join('');
+
+  return `<div class="chart-area">
+    <div style="margin-bottom:0.5rem">${legend}</div>
+    ${accChart}${f1Chart}${classCharts}
+  </div>`;
+}
+
+// ── COMPARE VIEW ─────────────────────────────────────────────────────────────
+function renderCompare(rows) {
+  // Best by val_accuracy
+  const best = [...rows].sort((a,b) => numOf(b,'val_accuracy') - numOf(a,'val_accuracy'))[0];
+  // Best by macro_f1
+  const bestF1 = [...rows].sort((a,b) => numOf(b,'macro_f1') - numOf(a,'macro_f1'))[0];
+
+  function card(title, r, color) {
+    const rows2 = [
+      ['exp_id', r.exp_id],
+      ['model', r.model],
+      ['epochs', r.epochs],
+      ['lr', r.lr],
+      ['batch_size', r.batch_size],
+      ['val_accuracy', pct(numOf(r,'val_accuracy'))],
+      ['val_loss', parseFloat(r.val_loss).toFixed(4)],
+      ['macro_f1', pct(numOf(r,'macro_f1'))],
+      ['best_epoch', r.best_epoch],
+      ['train_time_s', parseFloat(r.train_time_s).toFixed(0)+'s'],
+    ];
+    const perClass = F1_CLASSES.map((col, i) => {
+      const v = numOf(r, col);
+      const c = colorScale(v, 0.5, 1.0);
+      return `<div class="compare-row"><span class="k">${F1_LABELS[i]}</span><span class="v ${c.cls}">${pct(v)}</span></div>`;
+    }).join('');
+
+    return `<div class="compare-card">
+      <h3 style="color:${color}">${title}</h3>
+      ${rows2.map(([k,v]) => `<div class="compare-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('')}
+      <div style="margin-top:0.8rem;font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Per-class F1</div>
+      ${perClass}
+      <div style="margin-top:0.8rem;font-size:0.72rem;color:var(--text-muted)">${r.notes}</div>
+    </div>`;
+  }
+
+  // Delta table vs best
+  const ref = best;
+  const deltaTable = rows.map(r => {
+    const dAcc = (numOf(r,'val_accuracy') - numOf(ref,'val_accuracy')) * 100;
+    const dF1  = (numOf(r,'macro_f1')     - numOf(ref,'macro_f1'))     * 100;
+    const dLoss= numOf(r,'val_loss')       - numOf(ref,'val_loss');
+    const sign = v => v > 0 ? `+${v.toFixed(3)}` : v.toFixed(3);
+    const cls  = v => v > 0.001 ? 'c-good' : v < -0.001 ? 'c-bad' : '';
+    return `<tr>
+      <td class="mono">${r.exp_id}</td>
+      <td class="mono">${r.epochs}</td><td class="mono">${r.lr}</td><td class="mono">${r.batch_size}</td>
+      <td class="mono">${pct(numOf(r,'val_accuracy'))}</td>
+      <td class="mono ${cls(dAcc)}">${sign(dAcc)}%</td>
+      <td class="mono">${pct(numOf(r,'macro_f1'))}</td>
+      <td class="mono ${cls(dF1)}">${sign(dF1)}%</td>
+      <td class="mono">${parseFloat(r.val_loss).toFixed(4)}</td>
+      <td class="mono ${cls(-dLoss)}">${sign(dLoss)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<div>
+    <div class="compare-panel" style="margin-bottom:1.5rem">
+      ${card('Best Val Accuracy', best, '#5b8dee')}
+      ${best !== bestF1 ? card('Best Macro F1', bestF1, '#7c5ce0') : ''}
+    </div>
+    <div style="margin-bottom:0.5rem;font-size:0.8rem;color:var(--text-muted)">Delta vs best val_accuracy run</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>exp_id</th><th>Ep</th><th>LR</th><th>BS</th>
+          <th>Val Acc</th><th>Δ Acc</th>
+          <th>Macro F1</th><th>Δ F1</th>
+          <th>Val Loss</th><th>Δ Loss</th>
+        </tr></thead>
+        <tbody>${deltaTable}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+function loadData(csv) {
+  allRows = parseCSV(csv);
+  const models = [...new Set(allRows.map(r => r.model))];
+  const sel = document.getElementById('model-filter');
+  sel.innerHTML = '<option value="">All models</option>' + models.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('run-count').textContent = allRows.length + ' runs';
+  render();
+}
+
+document.getElementById('filter-input').addEventListener('input', e => { filterText = e.target.value; render(); });
+document.getElementById('model-filter').addEventListener('change', e => { modelFilter = e.target.value; render(); });
+document.getElementById('csv-upload').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => loadData(ev.target.result);
+  reader.readAsText(file);
+});
+
+loadData(EMBEDDED_CSV);
+</script>
+</body>
+</html>

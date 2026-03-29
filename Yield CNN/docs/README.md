@@ -23,6 +23,8 @@ Reference notes written during development of the LSWMD wafer defect classifier.
 
 **07_pseudo_labeling.md** documents the pseudo-labeling run using `best_se_only.pt` on 638,507 unlabeled LSWMD wafers. 340,568 samples (53.3%) met the per-class confidence threshold before capping. The Donut class produced 59,578 pseudo-labels at mean confidence 1.0000; the saturated softmax mechanism is derived and shown to indicate extrapolation onto out-of-distribution patterns rather than genuine Donut signal. Two mitigations are applied: Donut threshold raised from 0.98 to 0.999, and a `MAX_PSEUDO_MULTIPLIER = 3` cap enforced per class. Post-cap combined dataset is approximately 416,513 samples; the three weakest classes gain directly: Scratch 954→3,320, Loc 2,874→6,414, Near-full 119→476.
 
+**08_pseudo_labeling_experiments.md** documents three retrain experiments on the combined labeled + pseudo-labeled dataset (EXP-11, EXP-12, EXP-13). EXP-11 failed: 248,215 none pseudo-labels were not truncated by the 3x cap, making the combined dataset 87% none and causing model collapse to predicting only none. EXP-12 excluded none and strong classes (F1 > 0.90) from pseudo-labeling; Donut, Edge-Loc, and Loc improved materially but Scratch collapsed to F1 0.540 from overconfident pseudo-labels. EXP-13 excluded Scratch pseudo-labels; Scratch partially recovered to 0.620 while Donut (0.975), Edge-Loc (0.910), and Loc (0.844) held. Net result: macro F1 0.884 versus se_only baseline 0.886, statistically indistinguishable at the macro level. Best checkpoint: epoch 25, val_loss=0.0446.
+
 ---
 
 ## Experiment results summary
@@ -34,6 +36,7 @@ Reference notes written during development of the LSWMD wafer defect classifier.
 | ResNet+Focal | 40 | 0.890 | 0.87 | 0.80 | +20 epochs, CosineAnnealingLR |
 | Batch ablation best | 40 | 0.888 | 0.867 | 0.803 | batch=128, LR=3e-4, confirmed optimal |
 | SE only | 40 | 0.886 | 0.873 | 0.802 | SE attention, ReduceLROnPlateau |
+| SE pseudo v3 | 40 | 0.884 | 0.975 | 0.620 | pseudo-labels: Donut, Edge-Loc, Loc, Near-full only |
 
 ---
 
