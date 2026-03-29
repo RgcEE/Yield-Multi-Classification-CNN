@@ -1,0 +1,22 @@
+Confidence Threshold Report (threshold=0.7)
+
+Total samples:    34,590
+Auto-classified:  32,928  (95.2%)
+Abstained:        1,662  (4.8%)
+
+Per-class metrics on auto-classified samples:
+              precision    recall  f1-score   support
+
+      Center       0.97      0.97      0.97       811
+       Donut       0.92      0.96      0.94        96
+    Edge-Loc       0.84      0.96      0.90       899
+   Edge-Ring       0.99      0.98      0.99      1818
+         Loc       0.84      0.91      0.88       584
+   Near-full       0.96      1.00      0.98        23
+      Random       0.90      0.96      0.93       163
+     Scratch       0.74      0.93      0.82       204
+        none       1.00      0.99      0.99     28330
+
+    accuracy                           0.99     32928
+   macro avg       0.91      0.96      0.93     32928
+weighted avg       0.99      0.99      0.99     32928
