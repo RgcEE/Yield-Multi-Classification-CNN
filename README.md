@@ -9,34 +9,34 @@ This repository is dedicated to semiconductor engineering work.
 
 ## Yield CNN
 
-A multiclass CNN classifier for semiconductor wafer defect pattern recognition using the LSWMD dataset. Trains a 4-block convolutional network across 9 defect classes (8 defect types + none) and saves the best checkpoint based on validation loss.
+A multiclass CNN classifier for semiconductor wafer defect pattern recognition using the [WM-811K (LSWMD) dataset](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map/code). Trains a 4-block convolutional network across 9 defect classes (8 defect types + none) and saves the best checkpoint based on validation loss.
 
 Reference notes written during development. Written to be understood, not just referenced; each doc explains the why behind the implementation, not just what the code does.
 
 ### Documentation
 
-#### [01_cnn_fundamentals.md](01_cnn_fundamentals.md)
+#### [01_cnn_fundamentals.md](Yield%20CNN/docs/01_cnn_fundamentals.md)
 What a CNN is mathematically. The forward pass layer by layer: convolution as a dot product, BatchNorm, SiLU vs ReLU, spatial downsampling, AdaptiveAvgPool, dropout, the linear classifier. The skip connection explained via gradient flow. Read this first.
 
-#### [02_training_mechanics.md](02_training_mechanics.md)
+#### [02_training_mechanics.md](Yield%20CNN/docs/02_training_mechanics.md)
 The five-line training loop. CrossEntropyLoss vs FocalLoss with the math. Backpropagation and the chain rule. AdamW update equation explained term by term. Learning rate schedulers: ReduceLROnPlateau vs CosineAnnealingLR vs warm restarts. WeightedRandomSampler and why it is not the same as loss class weights. What overfitting looks like in the epoch output.
 
-#### [03_reading_results.md](03_reading_results.md)
+#### [03_reading_results.md](Yield%20CNN/docs/03_reading_results.md)
 How to read the classification report column by column. The difference between precision, recall, F1, accuracy, macro avg, and weighted avg. Why accuracy is misleading for LSWMD. Statistical uncertainty per class based on sample count. How to compare experiments. The confusion matrix and what to look for. Why val loss is saved over accuracy.
 
-#### [04_dynamic_training.md](04_dynamic_training.md)
+#### [04_dynamic_training.md](Yield%20CNN/docs/04_dynamic_training.md)
 The "differential score analyzer" concept mapped to real techniques: dynamic class weighting, learning rate warm restarts (SGDR), checkpoint-and-branch. How to open the training black box: per-batch loss logging, gradient norm monitoring, activation statistics, Grad-CAM. Research papers for each technique with direct links.
 
-#### [05_batch_size_ablation.md](05_batch_size_ablation.md)
+#### [05_batch_size_ablation.md](Yield%20CNN/docs/05_batch_size_ablation.md)
 Batch size and learning rate ablation across seven runs. The mechanism behind batch=128 as the optimal configuration: implicit regularization, BatchNorm stability, and the linear scaling rule. The macro F1 ceiling at 0.888 interpreted as a representational capacity limit, not a hyperparameter problem.
 
-#### [06_se_coord.md](06_se_coord.md)
+#### [06_se_coord.md](Yield%20CNN/docs/06_se_coord.md)
 SE attention and CoordConv ablation. Three implementation bugs documented with their effect on result validity traced run by run. Root cause of CoordConv's F1 regression derived. Decision to adopt SE attention as the new base architecture recorded with supporting experimental evidence.
 
-#### [07_pseudo_labeling.md](07_pseudo_labeling.md)
+#### [07_pseudo_labeling.md](Yield%20CNN/docs/07_pseudo_labeling.md)
 Pseudo-labeling run on 638,507 unlabeled LSWMD wafers using `best_se_only.pt`. 340,568 samples accepted at per-class confidence thresholds before capping. Donut softmax saturation at mean confidence 1.0000 derived as extrapolation onto out-of-distribution patterns, not genuine signal. Two mitigations applied: Donut threshold raised to 0.999 and a 3x per-class cap enforced. Post-cap combined dataset approximately 416,513 samples; Scratch, Loc, and Near-full gain directly.
 
-#### [08_pseudo_labeling_experiments.md](08_pseudo_labeling_experiments.md)
+#### [08_pseudo_labeling_experiments.md](Yield%20CNN/docs/08_pseudo_labeling.md)
 Three retrain experiments on the combined labeled + pseudo-labeled dataset. The full pseudo-label retrain collapsed to predicting only none: uncapped none pseudo-labels made the combined dataset 87% none. Excluding none and strong-F1 classes from pseudo-labeling recovered Donut (0.975), Edge-Loc (0.910), and Loc (0.844) but collapsed Scratch to 0.540 from overconfident pseudo-labels. Excluding Scratch pseudo-labels as well recovered Scratch partially to 0.620 while Donut and Edge-Loc held. Net macro F1 0.884 versus se_only baseline 0.886, statistically indistinguishable.
 
 ---
@@ -78,6 +78,9 @@ Scratch precision at 0.74 remains the weakest figure; low-confidence Scratch pre
 ---
 
 ### Key references
+
+Wu et al., 2014. *WM-811K Wafer Map Dataset (LSWMD).*
+https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map/code
 
 He et al., 2015. *Deep Residual Learning for Image Recognition.*
 https://arxiv.org/abs/1512.03385
