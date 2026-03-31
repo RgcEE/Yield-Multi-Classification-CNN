@@ -1,0 +1,17 @@
+Classification Report — Baseline (plain CNN)
+
+              precision    recall  f1-score   support
+
+      Center       0.94      0.82      0.88       859
+       Donut       0.96      0.40      0.56       111
+    Edge-Loc       0.86      0.68      0.76      1038
+   Edge-Ring       0.97      0.97      0.97      1936
+         Loc       0.79      0.59      0.68       718
+   Near-full       0.73      1.00      0.85        30
+      Random       0.65      0.92      0.76       173
+     Scratch       0.84      0.70      0.76       239
+        none       0.98      1.00      0.99     29486
+
+    accuracy                           0.97     34590
+   macro avg       0.86      0.79      0.80     34590
+weighted avg       0.97      0.97      0.97     34590
