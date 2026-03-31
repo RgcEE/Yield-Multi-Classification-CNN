@@ -1,10 +1,6 @@
 # Yield CNN documentation index
 
 Author: Reynaldo Gomez
-Semiconductor-Engineering: Yield CNN
-
-Reference notes written during development of the LSWMD wafer defect classifier. Written to be understood, not just referenced; each document derives the why behind the implementation choices, connecting implementation details to the mathematical properties they are designed to exploit.
-
 ---
 
 ## Documents
