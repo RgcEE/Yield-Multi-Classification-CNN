@@ -1,13 +1,8 @@
-# Semiconductor-Engineering
-
-Author: Reynaldo Gomez
-Semiconductor-Engineering
-
-This repository is dedicated to semiconductor engineering work.
-
 ---
 
 ## Yield CNN
+
+Author: Reynaldo Gomez
 
 A multiclass CNN classifier for semiconductor wafer defect pattern recognition using the [WM-811K (LSWMD) dataset](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map/code). Trains a 4-block convolutional network across 9 defect classes (8 defect types + none) and saves the best checkpoint based on validation loss.
 
