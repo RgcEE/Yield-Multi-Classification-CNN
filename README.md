@@ -1,12 +1,8 @@
----
-
 ## Yield CNN
 
 Author: Reynaldo Gomez
 
 A multiclass CNN classifier for semiconductor wafer defect pattern recognition using the [WM-811K (LSWMD) dataset](https://www.kaggle.com/datasets/qingyi/wm811k-wafer-map/code). Trains a 4-block convolutional network across 9 defect classes (8 defect types + none) and saves the best checkpoint based on validation loss.
-
-Reference notes written during development. Written to be understood, not just referenced; each doc explains the why behind the implementation, not just what the code does.
 
 ### Documentation
 
